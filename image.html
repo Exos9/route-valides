@@ -3,20 +3,118 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Image</title>
+  <title>Validation Result — routevalides.help</title>
   <style>
-    html, body { height:100%; margin:0; background:#000; }
-    img { width:100vw; height:100vh; object-fit:contain; display:block; }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #070c18;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Slim result bar at the top */
+    .result-bar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 44px;
+      background: rgba(7, 12, 24, 0.95);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 12px;
+      color: #3a4d68;
+    }
+
+    .result-bar-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #5a7095;
+      font-size: 13px;
+    }
+
+    .result-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 100px;
+      background: rgba(0, 217, 126, 0.08);
+      border: 1px solid rgba(0, 217, 126, 0.22);
+      color: #00b870;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .dot-green {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #00d97e;
+      box-shadow: 0 0 5px rgba(0, 217, 126, 0.8);
+    }
+
+    /* Image area */
+    .img-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
   </style>
 </head>
 <body>
-  <img id="resultImage" src="" alt="Result image">
+  <div class="result-bar">
+    <div class="result-bar-brand">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      routevalides.help
+    </div>
+    <div class="result-badge">
+      <div class="dot-green"></div>
+      Validation complete
+    </div>
+    <span id="airac-bar">AIRAC 2404 · NM B2B v24.1</span>
+  </div>
+
+  <div class="img-wrap">
+    <img id="resultImage" src="" alt="Validation result" />
+  </div>
 
   <script>
-    // Read query parameter "img"
     const params = new URLSearchParams(window.location.search);
-    const img = params.get('img') || 'page.webp'; // fallback
+    const img = params.get('img') || 'page.webp';
     document.getElementById('resultImage').src = img;
+
+    // Live AIRAC cycle
+    (function () {
+      const CYCLE_DAYS = 28;
+      const REF = Date.UTC(2024, 0, 25);
+      const now = new Date();
+      const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      const cycleIndex = Math.floor((today - REF) / 86400000 / CYCLE_DAYS);
+      const startDate = new Date(REF + cycleIndex * CYCLE_DAYS * 86400000);
+      const startYear = startDate.getUTCFullYear();
+      const jan1 = Date.UTC(startYear, 0, 1);
+      let firstOfYear = Math.ceil((jan1 - REF) / 86400000 / CYCLE_DAYS);
+      if (new Date(REF + firstOfYear * CYCLE_DAYS * 86400000).getUTCFullYear() < startYear) firstOfYear++;
+      const id = String(startYear).slice(-2) + String(cycleIndex - firstOfYear + 1).padStart(2, '0');
+      document.getElementById('airac-bar').textContent = `AIRAC ${id} · NM B2B v24.1`;
+    })();
   </script>
 </body>
 </html>

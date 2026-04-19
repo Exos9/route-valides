@@ -3,209 +3,566 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>routevalides.help</title>
+<title>routevalides.help — ICAO FPL Validator</title>
 
 <style>
-  /* Reset + base */
+  *, *::before, *::after { box-sizing: border-box; }
+
   html, body {
     margin: 0;
     height: 100%;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
-                 Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: url('bg.jpg') no-repeat center center fixed;
-    background-size: cover;
-    color: #e5e5e7;
-    position: relative;
-  }
-
-  p {
-  background-image: url('bg.jpg');
-}
-
-  /* Background animated gradient 
-  .bg-anim {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle at 20% 20%, rgba(120,120,255,0.25), transparent 60%),
-                radial-gradient(circle at 80% 80%, rgba(255,100,180,0.18), transparent 60%),
-                #0f0f0f;
-    filter: blur(100px);
-    z-index: -1;
-    animation: drift 18s infinite alternate ease-in-out;
-  }
-
-  @keyframes drift {
-    0%   { transform: translate(0px, 0px) scale(1); }
-    100% { transform: translate(40px, -40px) scale(1.15); }
-  }*/
-
-  /* Card container */
-  .card {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #070c18;
+    color: #c8d0e0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background: rgba(30,30,32,0.32);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
-    padding: 42px;
-    border-radius: 28px;
-    width: 92%;
-    max-width: 650px;
-    box-shadow: 0 0 40px rgba(0,0,0,0.45);
-    animation: fadeIn 0.8s ease-out forwards;
-    opacity: 0;
-    z-index: 1;
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(14px); }
+  /* ---- Background ---- */
+  .bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 0%,  rgba(18, 80, 220, 0.16) 0%, transparent 65%),
+      radial-gradient(ellipse 60% 50% at 85% 100%, rgba(0, 130, 255, 0.10) 0%, transparent 65%),
+      #070c18;
+  }
+
+  .bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 30%, transparent 80%);
+  }
+
+  /* ---- Layout ---- */
+  .layout {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding-bottom: 26px; /* room for status bar */
+  }
+
+  /* ---- Navbar ---- */
+  .navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 52px;
+    border-bottom: 1px solid rgba(255,255,255,0.055);
+    background: rgba(7, 12, 24, 0.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    flex-shrink: 0;
+  }
+
+  .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #dce8fa;
+    letter-spacing: 0.01em;
+  }
+
+  .brand-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, #1a4fff 0%, #0099ff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(26, 79, 255, 0.4);
+    flex-shrink: 0;
+  }
+
+  .navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: #3a4d68;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 100px;
+    border: 1px solid rgba(0, 217, 126, 0.25);
+    background: rgba(0, 217, 126, 0.07);
+    color: #00c97a;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .dot-green {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #00d97e;
+    box-shadow: 0 0 6px rgba(0, 217, 126, 0.8);
+    flex-shrink: 0;
+  }
+
+  /* ---- Main ---- */
+  .main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 20px;
+  }
+
+  /* ---- Card ---- */
+  .card {
+    width: 100%;
+    max-width: 680px;
+    background: rgba(11, 17, 33, 0.88);
+    border: 1px solid rgba(255,255,255,0.075);
+    border-radius: 18px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.04) inset,
+      0 28px 70px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(26, 79, 255, 0.07);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    overflow: hidden;
+    animation: slideUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(22px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .title {
-    text-align: center;
-    font-size: 32px;
-    font-weight: 600;
-    margin-bottom: 6px;
-    letter-spacing: -0.01em;
+  .card-accent {
+    height: 3px;
+    background: linear-gradient(90deg, #1244e8 0%, #2d7ef7 55%, #00c3ff 100%);
   }
 
-  .subtitle {
-    text-align: center;
-    font-size: 15px;
+  .card-body {
+    padding: 32px 38px 36px;
+  }
+
+  /* ---- Card header ---- */
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .card-header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(26, 79, 255, 0.1);
+    border: 1px solid rgba(26, 79, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .card-header-text h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #e6eefa;
+    margin: 0 0 5px;
+    letter-spacing: -0.02em;
+  }
+
+  .card-header-text p {
+    font-size: 13px;
+    color: #4a5e7e;
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  /* ---- Divider ---- */
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.05);
     margin-bottom: 24px;
-    color: #b3b3b7;
   }
 
-  /* Form & textarea */
+  /* ---- Form ---- */
   form {
-    width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 18px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: #3e5070;
   }
 
   textarea {
     width: 100%;
-    max-width: 100%;
-    height: 210px;
-    padding: 16px;
-    border-radius: 14px;
-    font-size: 15px;
-    line-height: 1.4;
-    background: #1b1b1d;
-    color: #e5e5e7;
-    border: 1px solid #2c2c2e;
+    height: 195px;
+    padding: 13px 15px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-family: "SF Mono", "Cascadia Code", "Fira Code", Menlo, "Courier New", monospace;
+    line-height: 1.65;
+    background: rgba(5, 9, 20, 0.8);
+    color: #b8d0f0;
+    border: 1px solid rgba(255,255,255,0.065);
     resize: vertical;
     outline: none;
-    transition: all 0.25s ease;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.35) inset;
+  }
+
+  textarea::placeholder {
+    color: #1e2d45;
+    font-family: "SF Mono", "Cascadia Code", "Fira Code", Menlo, "Courier New", monospace;
   }
 
   textarea:focus {
-    border-color: #0a84ff;
-    box-shadow: 0 0 0 4px rgba(10,132,255,0.25);
-    background: #202022;
+    border-color: rgba(45, 126, 247, 0.45);
+    box-shadow: 0 0 0 3px rgba(45, 126, 247, 0.10), 0 1px 4px rgba(0,0,0,0.35) inset;
+    background: rgba(6, 11, 26, 0.9);
   }
 
-  /* Button */
-  button {
+  /* ---- Button ---- */
+  .btn-validate {
     width: 100%;
-    margin-top: 18px;
-    padding: 14px;
-    font-size: 17px;
-    border-radius: 14px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
     border: none;
-    background: #0a84ff;
-    color: white;
+    background: linear-gradient(180deg, #2d7ef7 0%, #1a60e8 100%);
+    color: #fff;
     cursor: pointer;
-    transition: background 0.25s;
+    letter-spacing: 0.01em;
+    transition: box-shadow 0.2s, transform 0.15s, background 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25), 0 0 0 1px rgba(45,126,247,0.5);
+    position: relative;
+    overflow: hidden;
   }
 
-  button:hover {
-    background: #006cd4;
+  .btn-validate::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.09) 0%, transparent 55%);
+    pointer-events: none;
   }
 
-  .loading-fade-out {
-  opacity: 0;
-}
+  .btn-validate:hover {
+    background: linear-gradient(180deg, #3d8eff 0%, #2571f5 100%);
+    box-shadow: 0 4px 18px rgba(45,126,247,0.38), 0 0 0 1px rgba(45,126,247,0.6);
+    transform: translateY(-1px);
+  }
 
-.loading-fade-in {
-  opacity: 1;
-}
+  .btn-validate:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
 
+  /* ---- Card footer ---- */
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 38px;
+    border-top: 1px solid rgba(255,255,255,0.048);
+    background: rgba(5, 9, 18, 0.4);
+  }
+
+  .footer-item {
+    font-size: 11px;
+    color: #2e3d55;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .footer-item svg { opacity: 0.6; }
+  .footer-sep { color: #1e2a3a; }
+
+  /* ---- Loading overlay ---- */
+  #loading-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(18px) saturate(120%);
+    -webkit-backdrop-filter: blur(18px) saturate(120%);
+    background: rgba(4, 7, 16, 0.72);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .loading-card {
+    background: rgba(11, 17, 33, 0.97);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    box-shadow: 0 40px 90px rgba(0,0,0,0.65);
+    padding: 30px 38px 28px;
+    text-align: center;
+    min-width: 310px;
+  }
+
+  .loading-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .loading-spinner-icon {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(45, 126, 247, 0.2);
+    border-top-color: #2d7ef7;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+    flex-shrink: 0;
+  }
+
+  .loading-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #3a4e68;
+  }
+
+  #loading-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: #c0d4f0;
+    transition: opacity 0.35s ease;
+    margin-bottom: 22px;
+    min-height: 22px;
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 100px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #1a4fff 0%, #00b4ff 100%);
+    border-radius: 100px;
+    transition: width 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    width: 0%;
+  }
+
+  .progress-label {
+    font-size: 11px;
+    color: #2e3d55;
+  }
+
+  /* ---- Status bar ---- */
+  .statusbar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 26px;
+    background: rgba(4, 7, 14, 0.88);
+    border-top: 1px solid rgba(255,255,255,0.038);
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    gap: 18px;
+    font-size: 11px;
+    color: #263342;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .sb-item { display: flex; align-items: center; gap: 5px; }
+  .sb-ok   { color: #00a85e; }
+  .sb-sep  { color: #1a2332; }
+  .sb-right { margin-left: auto; }
+
+  /* Fade helpers */
+  .loading-fade-out { opacity: 0 !important; }
+  .loading-fade-in  { opacity: 1 !important; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 
 <body>
+<div class="bg"></div>
 
-<div class="bg-anim"></div>
+<div class="layout">
 
-<div class="card">
-  <div class="title">routevalides.help</div>
-  <div class="subtitle">Please insert an ICAO 2012 format flight plan</div>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="brand-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 4s-2 1-3.5 2.5L11 10 2.8 8.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 16l-2 3h-1l-1 1 3 2 2-1v-1l3-2 5.1 6.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
+        </svg>
+      </div>
+      routevalides.help
+    </div>
+    <div class="navbar-right">
+      <span>NM B2B v24.1</span>
+      <div class="status-pill">
+        <div class="dot-green"></div>
+        NM Connected
+      </div>
+    </div>
+  </nav>
 
-  <form id="f" onsubmit="return false">
-    <textarea id="t" placeholder="Paste the full ICAO 2012 FPL here..."></textarea>
-    <button id="b">Validate</button>
-  </form>
+  <!-- Main content -->
+  <div class="main">
+    <div class="card">
+      <div class="card-accent"></div>
+      <div class="card-body">
+
+        <div class="card-header">
+          <div class="card-header-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2d7ef7" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div class="card-header-text">
+            <h1>Flight Plan Validator</h1>
+            <p>Submit an ICAO 2012 format flight plan for real-time route validation against current NM airspace restrictions, NOTAM data, and CFMU slot availability.</p>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <form id="f" onsubmit="return false">
+          <div class="field">
+            <label for="t">ICAO 2012 Flight Plan</label>
+            <textarea id="t" placeholder="(FPL-XXXXXXX-IS&#10;-B738/M-SDE1E2E3FGHIJ1J3J4J5M1RWXY/LB1&#10;-LFPG0800&#10;-N0450F350 DCT EVIPO UN859 DIVKO&#10;-LEMD0130 LFPO&#10;-PBN/B1C1D1L1O1S2 NAV/SBAS DOF/...)"></textarea>
+          </div>
+          <button type="button" class="btn-validate" id="b">Validate Flight Plan</button>
+        </form>
+
+      </div>
+
+      <div class="card-footer">
+        <div class="footer-item">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          ICAO Doc 4444 / PANS-ATM
+        </div>
+        <div class="footer-item">
+          <span id="airac-footer">AIRAC 2404</span>
+          <span class="footer-sep">·</span>
+          <span id="airac-valid">Valid until 18 APR 2026</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Status bar -->
+<div class="statusbar">
+  <div class="sb-item"><span class="sb-ok">●</span> EUROCONTROL NM</div>
+  <span class="sb-sep">|</span>
+  <div class="sb-item" id="airac-sb">AIRAC 2404</div>
+  <span class="sb-sep">|</span>
+  <div class="sb-item">ETO UTC</div>
+  <div class="sb-item sb-right">v3.4.1</div>
 </div>
 
 <!-- Loading overlay -->
-<div id="loading-overlay" style="
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  background: rgba(15,15,15,0.55);
-  z-index: 999;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-">
-  <div style="
-    background: rgba(30,30,32,0.55);
-    padding: 32px 44px;
-    border-radius: 20px;
-    box-shadow: 0 0 30px rgba(0,0,0,0.45);
-    text-align: center;
-    font-size: 18px;
-    color: #e5e5e7;
-  ">
-  <div id="loading-text-wrapper"
-     style="height: 22px; width: 260px; margin-bottom: 14px; overflow: hidden; display: flex; justify-content: center;">
-      <div id="loading-text" style="transition: opacity 0.35s ease; white-space: nowrap; text-align: center;">
-        Validating flight plan…
-      </div>
-  </div>
-    <div class="spinner" style="
-      width: 32px;
-      height: 32px;
-      border: 4px solid rgba(255,255,255,0.25);
-      border-top-color: #0a84ff;
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-      margin: 0 auto;
-    "></div>
+<div id="loading-overlay">
+  <div class="loading-card">
+    <div class="loading-header">
+      <div class="loading-spinner-icon"></div>
+      <div class="loading-label">Processing</div>
+    </div>
+    <div id="loading-text">Validating flight plan…</div>
+    <div class="progress-track">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="progress-label" id="progress-label">0%</div>
   </div>
 </div>
 
-<style>
-@keyframes spin {
-  to { transform: rotate(360deg); }
-  }
-</style>
-
 <script>
+// AIRAC cycle calculator
+// Reference: cycle 2401 effective date = 25 Jan 2024
+function getAirac() {
+  const CYCLE_DAYS = 28;
+  const REF = Date.UTC(2024, 0, 25); // 2401
+
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+
+  const diffDays = Math.floor((today - REF) / 86400000);
+  const cycleIndex = Math.floor(diffDays / CYCLE_DAYS);
+
+  const cycleStartMs = REF + cycleIndex * CYCLE_DAYS * 86400000;
+  const cycleEndMs   = cycleStartMs + (CYCLE_DAYS - 1) * 86400000;
+
+  const startDate = new Date(cycleStartMs);
+  const endDate   = new Date(cycleEndMs);
+  const startYear = startDate.getUTCFullYear();
+
+  // First cycle whose effective date falls in startYear
+  const jan1 = Date.UTC(startYear, 0, 1);
+  const daysToJan1 = Math.floor((jan1 - REF) / 86400000);
+  let firstOfYear = Math.ceil(daysToJan1 / CYCLE_DAYS);
+  if (new Date(REF + firstOfYear * CYCLE_DAYS * 86400000).getUTCFullYear() < startYear) {
+    firstOfYear++;
+  }
+
+  const cycleNum = cycleIndex - firstOfYear + 1;
+  const id = String(startYear).slice(-2) + String(cycleNum).padStart(2, '0');
+
+  const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const validUntil = `${endDate.getUTCDate()} ${MONTHS[endDate.getUTCMonth()]} ${endDate.getUTCFullYear()}`;
+
+  return { id, validUntil };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  // Inject live AIRAC info
+  const airac = getAirac();
+  document.getElementById('airac-footer').textContent = `AIRAC ${airac.id}`;
+  document.getElementById('airac-valid').textContent  = `Valid until ${airac.validUntil}`;
+  document.getElementById('airac-sb').textContent     = `AIRAC ${airac.id}`;
+
   const images = [
     'monke.webp',
     'bernie.jpg',
@@ -219,10 +576,12 @@ document.addEventListener("DOMContentLoaded", () => {
     'sweat.jpg'
   ];
 
-  const overlay = document.getElementById('loading-overlay');
+  const overlay     = document.getElementById('loading-overlay');
   const loadingText = document.getElementById('loading-text');
-  const button = document.getElementById('b');
-  const textarea = document.getElementById('t');
+  const progressBar = document.getElementById('progress-bar');
+  const progLabel   = document.getElementById('progress-label');
+  const button      = document.getElementById('b');
+  const textarea    = document.getElementById('t');
 
   const messages = [
     "Validating flight plan…",
@@ -235,25 +594,28 @@ document.addEventListener("DOMContentLoaded", () => {
     "Almost done…"
   ];
 
-  function setTextSmooth(newText) {
-    // fade out
+  const progressSteps = [5, 18, 33, 49, 63, 76, 89, 97];
+
+  function setTextSmooth(newText, pct) {
     loadingText.classList.add("loading-fade-out");
-
     setTimeout(() => {
-      // swap text
       loadingText.textContent = newText;
-
-      // fade in
+      progressBar.style.width = pct + '%';
+      progLabel.textContent = pct + '%';
       loadingText.classList.remove("loading-fade-out");
       loadingText.classList.add("loading-fade-in");
-
-      // cleanup fade-in class
-      setTimeout(() => {
-        loadingText.classList.remove("loading-fade-in");
-      }, 350);
-
-    }, 350); // matches CSS transition duration
+      setTimeout(() => loadingText.classList.remove("loading-fade-in"), 350);
+    }, 350);
   }
+
+  // Reset overlay when navigating back (bfcache restore)
+  window.addEventListener('pageshow', () => {
+    overlay.style.opacity = "0";
+    overlay.style.pointerEvents = "none";
+    progressBar.style.width = "0%";
+    progLabel.textContent = "0%";
+    loadingText.textContent = messages[0];
+  });
 
   button.addEventListener('click', () => {
     const v = textarea.value.trim();
@@ -263,19 +625,19 @@ document.addEventListener("DOMContentLoaded", () => {
     overlay.style.pointerEvents = "all";
 
     let msgIndex = 0;
-    setTextSmooth(messages[msgIndex]);
+    setTextSmooth(messages[msgIndex], progressSteps[msgIndex]);
 
     const cycle = setInterval(() => {
       msgIndex = (msgIndex + 1) % messages.length;
-      setTextSmooth(messages[msgIndex]);
-    }, 1300); // full fade cycle: 0.35 + 0.35 + idle time
+      setTextSmooth(messages[msgIndex], progressSteps[msgIndex]);
+    }, 1300);
 
     const chosenImage = images[Math.floor(Math.random() * images.length)];
 
     setTimeout(() => {
       clearInterval(cycle);
       location.href = `image.html?img=${encodeURIComponent(chosenImage)}`;
-    }, 7800); // total fake-load duration
+    }, 7800);
   });
 });
 </script>
